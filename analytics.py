@@ -22,8 +22,8 @@ def grafico_entregas(df, ano):
     st.pyplot(plt)
 
 # Carregar os dados
-df_andrea = carregar_dados('delivery_andrea.csv')
-df_marina = carregar_dados('delivery_marina.csv')
+df_andrea = carregar_dados('extract_csv/delivery_andrea.csv')
+df_marina = carregar_dados('extract_csv/delivery_marina.csv')
 
 # Caixa de seleção para escolher o ano
 ano_selecionado = st.selectbox("Selecione o ano", options=df_andrea['Ano'].unique())
@@ -40,3 +40,7 @@ with col1:
 with col2:
     st.subheader(f'Marina - Ano {ano_selecionado}')
     grafico_entregas(df_marina, ano_selecionado)
+
+# # modificações:
+# colocar rotulos nas barras
+# Meses null precisam ser tirados
