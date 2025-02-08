@@ -26,7 +26,7 @@ if col2.button("➡ Próxima Página"):
 
 if st.session_state.pagina == 1:
     st.subheader("Relatório 1: Entregas")
-    st.write("Principais KPIs sobre a área de Entregas")
+    st.write("**Principais KPIs sobre a área de Entregas**")
 
     # Lista ordenada de meses
     ordem_meses = [
@@ -46,6 +46,89 @@ if st.session_state.pagina == 1:
         
         return df
 
+    # Função para calcular os KPIs
+    def calcular_kpis(df_andrea, df_marina, mes, ano):
+        df_andrea_filtrado = df_andrea[(df_andrea['Ano'] == ano) & (df_andrea['Mês'] == mes)]
+        df_marina_filtrado = df_marina[(df_marina['Ano'] == ano) & (df_marina['Mês'] == mes)]
+        
+        # Total de entregas
+        total_entregas = df_andrea_filtrado['N de viagens'].sum() + df_marina_filtrado['N de viagens'].sum()
+        
+        # Total de KMs rodados
+        total_kms = df_andrea_filtrado['TOTAL KM'].sum() + df_marina_filtrado['TOTAL KM'].sum()
+        
+        # Média de KM por entrega
+        media_kms_por_entrega = total_kms / total_entregas if total_entregas > 0 else 0
+        
+        # Desgaste
+        desgaste = df_andrea_filtrado['Valor total'].sum() + df_marina_filtrado['Valor total'].sum()
+        
+        # Custo por KM
+        custo_por_km = desgaste / total_kms if total_kms > 0 else 0
+        
+        # Custo médio por entrega
+        custo_medio_por_entrega = custo_por_km * media_kms_por_entrega
+        
+        # Cálculo da porcentagem em relação à meta de custo médio por entrega (meta 5)
+        if custo_medio_por_entrega > 5:
+            porcentagem_meta = ((custo_medio_por_entrega - 5) / 5) * 100  # Quanto é maior que 5
+        else:
+            porcentagem_meta = ((5 - custo_medio_por_entrega) / 5) * 100  # Quanto é menor que 5
+
+        # Formatando os valores para exibição
+        resultados = {
+            "Total de entregas": int(total_entregas),
+            "Total de KMs rodados": f"{total_kms:.2f}",
+            "Média de KM por entrega": f"{media_kms_por_entrega:.2f}",
+            "Desgaste R$": f"R$ {desgaste:.2f}",
+            "Custo por KM R$": f"R$ {custo_por_km:.2f}",
+            "Custo médio por entrega (CME) R$": f"R$ {custo_medio_por_entrega:.2f}",
+            "Porcentagem de CME em relação a meta": f"{porcentagem_meta:.2f}%"
+        }
+
+        return resultados
+
+    # Carregar os dados
+    df_andrea = carregar_dados('extract_csv/delivery_andrea.csv')
+    df_marina = carregar_dados('extract_csv/delivery_marina.csv')
+
+    # Caixa de seleção para escolher o ano e o mês
+    ano_selecionado = st.selectbox("Selecione o ano", options=df_andrea['Ano'].dropna().unique())
+    mes_selecionado = st.selectbox("Selecione o mês", options=ordem_meses)
+
+    # Calcular KPIs
+    kpis = calcular_kpis(df_andrea, df_marina, mes_selecionado, ano_selecionado)
+
+    # Exibir KPIs em uma tabela
+    kpis_df = pd.DataFrame(list(kpis.items()), columns=["KPI", "Valor"])
+    st.table(kpis_df)
+
+    # Exibir a comparação da meta de custo médio por entrega
+    custo_medio_por_entrega = float(kpis['Custo médio por entrega (CME) R$'].replace('R$', '').strip())
+    porcentagem_meta_valor = float(kpis['Porcentagem de CME em relação a meta'].replace('%', '').strip())
+
+    # Verificar a condição e ajustar o texto da meta
+    if custo_medio_por_entrega == 0:
+        meta_texto = f"Não temos dados para essa data"
+    elif porcentagem_meta_valor > -1:
+        meta_texto = f"A meta de CME é de 5.00 reais ou menos (está a {porcentagem_meta_valor:.2f}% acima da meta)"
+    else:
+        meta_texto = f"A meta de CME é de 5.00 reais ou menos (ótimo, está {porcentagem_meta_valor:.2f}% dentro da meta)"
+
+    # Corrigir a comparação para usar o valor numérico e exibir o texto com a cor apropriada
+    if custo_medio_por_entrega > 5 and custo_medio_por_entrega != 0:
+        st.markdown(f"<span style='color:red'>{meta_texto}</span>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<span style='color:green'>{meta_texto}</span>", unsafe_allow_html=True)
+
+    # Adicionar uma linha de divisória
+    st.markdown("---")
+
+    st.write("**Quantidade de entregas e média de KM rodado no mês**")
+    
+    # Layout com duas colunas para os gráficos
+    col1, col2 = st.columns(2)
+    
     # Função para gerar gráfico de entregas por mês e ano
     def grafico_entregas(df, ano):
         df_filtrado = df[df['Ano'] == ano].dropna(subset=['Mês'])
@@ -87,16 +170,6 @@ if st.session_state.pagina == 1:
         plt.legend(loc='upper left')
         
         st.pyplot(plt)
-
-    # Carregar os dados
-    df_andrea = carregar_dados('extract_csv/delivery_andrea.csv')
-    df_marina = carregar_dados('extract_csv/delivery_marina.csv')
-
-    # Caixa de seleção para escolher o ano
-    ano_selecionado = st.selectbox("Selecione o ano", options=df_andrea['Ano'].dropna().unique())
-
-    # Layout com duas colunas
-    col1, col2 = st.columns(2)
 
     # Gráfico para Andréa
     with col1:
