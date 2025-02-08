@@ -23,7 +23,6 @@ if col2.button("➡ Próxima Página"):
 ##################################### Assuntos #####################################
 
 # Relatório 1: Entregas
-
 if st.session_state.pagina == 1:
     st.subheader("Relatório 1: Entregas")
     st.write("**Principais KPIs sobre a área de Entregas**")
@@ -37,13 +36,10 @@ if st.session_state.pagina == 1:
     # Função para carregar o arquivo CSV
     def carregar_dados(caminho):
         df = pd.read_csv(caminho)
-        
         # Garantir que "Mês" seja string e padronizar
         df['Mês'] = df['Mês'].astype(str).str.lower().str.strip()
-        
         # Garantir que "N de viagens" seja numérico
         df['N de viagens'] = pd.to_numeric(df['N de viagens'], errors='coerce').fillna(0)
-        
         return df
 
     # Função para calcular os KPIs
@@ -124,11 +120,16 @@ if st.session_state.pagina == 1:
     # Adicionar uma linha de divisória
     st.markdown("---")
 
-    st.write("**Quantidade de entregas e média de KM rodado no mês**")
-    
+    # Exibir título em negrito
+    st.markdown("**Quantidade de entregas e média de KM rodado no mês**")
+
+    # Selecionar o ano usando o selectbox para ambos os DataFrames
+    anos_disponiveis = pd.concat([df_andrea['Ano'], df_marina['Ano']]).unique()
+    ano_selecionado = st.selectbox("Selecione o ano", options=anos_disponiveis, key="ano_selecionado")
+
     # Layout com duas colunas para os gráficos
     col1, col2 = st.columns(2)
-    
+
     # Função para gerar gráfico de entregas por mês e ano
     def grafico_entregas(df, ano):
         df_filtrado = df[df['Ano'] == ano].dropna(subset=['Mês'])
