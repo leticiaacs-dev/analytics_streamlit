@@ -20,7 +20,7 @@ if col1.button("⬅ Página Anterior", disabled=st.session_state.pagina == 1):
 if col2.button("➡ Próxima Página"):
     mudar_pagina(st.session_state.pagina + 1)
 
-##################################### Páginas #####################################
+##################################### Assuntos #####################################
 
 if st.session_state.pagina == 1:
     st.subheader("Relatório 1: Entregas")
