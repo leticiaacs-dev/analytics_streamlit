@@ -42,6 +42,8 @@ if st.session_state.pagina == 1:
         df['N de viagens'] = pd.to_numeric(df['N de viagens'], errors='coerce').fillna(0)
         return df
 
+######################## KPI table ########################
+
     # Função para calcular os KPIs
     def calcular_kpis(df_andrea, df_marina, mes, ano):
         df_andrea_filtrado = df_andrea[(df_andrea['Ano'] == ano) & (df_andrea['Mês'] == mes)]
@@ -97,6 +99,7 @@ if st.session_state.pagina == 1:
 
     # Exibir KPIs em uma tabela
     kpis_df = pd.DataFrame(list(kpis.items()), columns=["KPI", "Valor"])
+    # Resetar o índice do DataFrame antes de exibir
     st.table(kpis_df)
 
     # Exibir a comparação da meta de custo médio por entrega
@@ -119,6 +122,8 @@ if st.session_state.pagina == 1:
 
     # Adicionar uma linha de divisória
     st.markdown("---")
+
+######################## Delivery Plots ########################
 
     # Exibir título em negrito
     st.markdown("**Quantidade de entregas e média de KM rodado no mês**")
@@ -181,6 +186,78 @@ if st.session_state.pagina == 1:
     with col2:
         st.subheader(f'Marina - Ano {ano_selecionado}')
         grafico_entregas(df_marina, ano_selecionado)
+
+    # Adicionar uma linha de divisória
+    st.markdown("---")
+
+######################## When to use 3rd party delivery ########################
+
+    # Definir os custos por km para entregador próprio e terceirizado
+    custo_por_km_proprio = 1.10
+    custo_por_km_terceirizado = 2.18
+
+    # Função para calcular o custo total
+    def calcular_custo_total(total_kms, custo_por_km):
+        return total_kms * custo_por_km
+
+    # Função para calcular o tempo necessário em horas
+    def calcular_tempo_necessario(entregas, tempo_por_entrega):
+        tempo_total_necessario = entregas * tempo_por_entrega  # Tempo total necessário em minutos
+        return tempo_total_necessario / 60  # Converter para horas
+    
+    # Tabela de distâncias
+    distancias_km = [5, 10, 15, 20, 25, 30, 40, 50]  # Exemplo de distâncias em km
+    dados_distancias = []
+    for km in distancias_km:
+        custo_proprio = calcular_custo_total(km, custo_por_km_proprio)
+        custo_terceirizado = calcular_custo_total(km, custo_por_km_terceirizado)
+        dados_distancias.append([km, custo_proprio, custo_terceirizado])
+
+    # Criar DataFrame para a tabela de distâncias
+    df_distancias = pd.DataFrame(dados_distancias, columns=["Distância (km)", "Custo Próprio (R$)", "Custo Terceirizado (R$)"])
+
+
+    # Tabela de entregas diárias
+    tempo_disponivel_proprio = 240  # 4 horas = 240 minutos
+    tempo_por_entrega = 20  # 20 minutos por entrega
+    km_por_entrega = 2  # Exemplo de km por entrega
+
+    # Exemplo de número de entregas diárias
+    entregas_diarias = [5, 10, 15, 20, 25, 30]
+
+    dados_entregas = []
+    for entregas in entregas_diarias:
+        tempo_total_necessario = entregas * tempo_por_entrega  # Tempo total necessário para as entregas
+        tempo_necessario_em_horas = calcular_tempo_necessario(entregas, tempo_por_entrega)  # Tempo necessário em horas
+        if tempo_total_necessario <= tempo_disponivel_proprio:
+            # O entregador próprio consegue realizar as entregas
+            distancia_total = entregas * km_por_entrega  # Calcular a distância total
+            custo_proprio = calcular_custo_total(distancia_total, custo_por_km_proprio)
+            custo_terceirizado = calcular_custo_total(distancia_total, custo_por_km_terceirizado)
+            melhor_opcao = "Próprio"
+            aumento_porcentagem = None  # Deixar vazio caso a melhor opção seja "Próprio"
+        else:
+            # O entregador próprio não consegue realizar todas as entregas, usar terceirizado
+            distancia_total = entregas * km_por_entrega
+            custo_proprio = calcular_custo_total(distancia_total, custo_por_km_proprio)
+            custo_terceirizado = calcular_custo_total(distancia_total, custo_por_km_terceirizado)
+            melhor_opcao = "Terceirizado"
+            
+            # Calcular a porcentagem de aumento do custo
+            aumento_porcentagem = ((custo_terceirizado - custo_proprio) / custo_proprio) * 100
+        
+        dados_entregas.append([entregas, custo_proprio, custo_terceirizado, round(tempo_necessario_em_horas, 2), melhor_opcao, round(aumento_porcentagem, 2) if aumento_porcentagem is not None else ""])
+
+    # Criar DataFrame para a tabela de entregas diárias
+    df_entregas = pd.DataFrame(dados_entregas, columns=["Entregas Diárias", "Custo Próprio (R$)", "Custo Terceirizado (R$)", "Tempo Necessário (horas)", "Melhor Opção", "Aumento no valor da entrega (%)"])
+
+    # Exibir a tabela no Streamlit
+    st.markdown("##### Comparação de Custos por Número de Entregas Diárias - Considerando 20 minutos gastos por entrega")
+    st.dataframe(df_entregas)
+
+    # Exibir as tabelas no Streamlit
+    st.markdown("##### Comparação de Custos por Distância")
+    st.dataframe(df_distancias)
 
 elif st.session_state.pagina == 2:
     st.subheader("Relatório 2: Página 2")
