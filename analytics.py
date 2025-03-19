@@ -220,7 +220,7 @@ if st.session_state.pagina == 1:
     # Tabela de entregas diárias
     tempo_disponivel_proprio = 240  # 4 horas = 240 minutos
     tempo_por_entrega = 20  # 20 minutos por entrega
-    km_por_entrega = 2  # Exemplo de km por entrega
+    km_por_entrega = 5  # Exemplo de km por entrega
 
     # Exemplo de número de entregas diárias
     entregas_diarias = [5, 10, 15, 20, 25, 30]
